@@ -72,7 +72,7 @@ with streamlit_analytics.track():
     
     st.title('Gmail邮件群发工具')
     
-    uploaded_file = st.file_uploader("选择文件", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("选择群发文件", type=["csv", "xlsx"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df = convert_df_to_str(df)
