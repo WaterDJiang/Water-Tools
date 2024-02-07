@@ -40,7 +40,7 @@ with streamlit_analytics.track():
             image_path = "images/im3.png"
             st.image(image_path, width=70)
         with col1_2:
-            st.markdown("### Wattter.Tools")
+            st.title("Wattter.Tools")
         st.caption("作者：[Water.D.J] -- 版本：0.1.0")
         st.caption("https://wattter-tools.streamlit.app")
     
