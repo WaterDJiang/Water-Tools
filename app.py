@@ -5,9 +5,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 
-water = "gvyq wrvh hswa moup"
-
-
 # 邮件服务器设置部分
 st.sidebar.title("发件人邮箱配置")
 from_email = st.sidebar.text_input("邮箱地址", key="mail_address")
