@@ -32,47 +32,23 @@ with st.sidebar:
     # 使用提示和注意事项
     st.info(
         '''
-       **如何使用本工具：**
-        1. 在下方上传 CSV 或 Excel 文件，包含收件人邮箱地址。
-        2. 输入邮件的主题。
-        3. 输入邮件正文内容。您可以使用 HTML 格式。
-        4. 选择包含在邮件内容中的数据列（可选）。
-        5. 点击 '预览邮件' 查看邮件样式。
-        6. 点击 '发送邮件' 将邮件发送至列表中的所有邮箱。
-        
-        **重要提示：**
-        - 请确保您有权使用提供的邮箱地址发送邮件。
-        - 请勿使用此工具发送垃圾邮件或违反电子邮件法规的内容。
-        - 如果您的 Gmail 启用了双重验证，请使用应用专用密码。
-        - 请确保您的文件格式正确，且 "Email Address" 列包含有效的邮箱地址。
+        **使用提示**：
+        - 需通过启用Gmail邮箱的“应用专用密码”使用本产品。
+        - 确保邮箱列名为“Email Address”。
+        - 上传包含邮件地址的 CSV 或 Excel 文件。
+        - 输入邮件主题、抬头、正文和结尾。
+        - 选择特定列包含在邮件正文中。
+        - 点击发送邮件。
+
+        **注意事项**：
+        - 保护好“应用专用密码”。
+        - 谨慎处理敏感信息。
+        - 遵守隐私和安全标准。
+        - 避免发送垃圾邮件或违法内容。
         '''
     )
 
-# 函数：将 DataFrame 中的非字符串列转换为字符串
-def convert_df_to_str(df):
-    for col in df.columns:
-        if df[col].dtype != object:
-            df[col] = df[col].astype(str)
-    return df
-
-# 函数：生成邮件内容
-def generate_email_html(html_body, row, columns):
-    column_content = {col: row[col] for col in columns}
-    formatted_body = html_body.format(**column_content)
-    return formatted_body
-
-# 函数：创建 SMTP 服务器
-def create_smtp_server(from_email, password):
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(from_email, password)
-        return server
-    except Exception as e:
-        st.error(f"创建 SMTP 服务器失败: {e}")
-        return None
-
-# 函数：发送邮件
+# 发送邮件的函数
 def send_email(server, from_email, to_email, subject, body):
     try:
         msg = MIMEMultipart()
@@ -80,58 +56,121 @@ def send_email(server, from_email, to_email, subject, body):
         msg['To'] = to_email
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
+
         server.sendmail(from_email, to_email, msg.as_string())
-        return True
+        return True, "邮件发送成功"
     except Exception as e:
         return False, str(e)
 
-# 主界面
-def main():
-    st.title('Gmail邮件群发工具')
+# 转换 DataFrame 中的非字符串列为字符串类型
+def convert_df_to_str(df):
+    for col in df.columns:
+        if df[col].dtype != object:
+            df[col] = df[col].astype(str)
+    return df
 
-    # 文件上传部分
-    uploaded_file = st.file_uploader("选择文件", type=["csv", "xlsx"])
-    if uploaded_file is not None:
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
-        df = convert_df_to_str(df)
-        st.write(df)
+# 生成邮件内容的辅助函数
+def generate_email_content(head, body, row, columns, end, format):
+    column_content = ""
+    if columns:  # 检查是否有选定的列
+        if format == "文字形式":
+            column_content = "\n\n".join(f"{col}: {row[col]}" for col in columns)
+        else:
+            html_table = '<table style="border-collapse: collapse; width: 100%;">'
+            html_table += '<tr>'
+            for col in columns:
+                html_table += f'<th style="border: 1px solid black; padding: 8px;">{col}</th>'
+            html_table += '</tr>'
+            html_table += '<tr>'
+            for col in columns:
+                html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
+            html_table += '</tr>'
+            html_table += '</table>'
+            column_content = html_table
 
-        # 用户输入部分
-        subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
-        body_columns = st.multiselect("选择需要的个性化内容列，并通过“{列名}”的方式填入邮件正文的对应位置", df.columns, key="columns")
-        user_body_html = st.text_area("输入邮件正文（HTML格式）", "在这里输入邮件的HTML内容...", key="body_html")
+    return f"{head}<br><br>{body}<br><br>{column_content}<br><br>{end}"
+
+# Streamlit 网页界面部分
+st.title('Gmail邮件群发工具')
+
+# 文件上传部分
+uploaded_file = st.file_uploader("选择文件", type=["csv", "xlsx"])
+if uploaded_file is not None:
+    df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    df = convert_df_to_str(df)
+    st.write(df)
+
+    subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
+    user_body_head = st.text_input("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head")
+    user_body_body = st.text_area("输入邮件正文", "在这里输入邮件的主要内容...", key="body_body")
+    body_columns = st.multiselect("选择包含在邮件内容中的列", df.columns, key="columns")
+    content_format = st.radio("选择个性化内容的显示格式", ("文字形式", "表格形式"))
+    user_body_end = st.text_area("输入邮件结尾", "在这里输入邮件的结束部分...", key="body_end")
+
+    # 预览邮件
+    if st.button('预览邮件'):
+        if df.empty:
+            st.error("请先上传文件")
+        else:
+            sample_row = df.iloc[0]
+            preview_content = generate_email_content(
+                user_body_head, user_body_body, sample_row, body_columns, user_body_end, content_format
+            )
+            st.markdown("### 邮件预览")
+            st.markdown(preview_content, unsafe_allow_html=True)
+
+    # 发送邮件并统计成功和失败的数量
+    if st.button('发送邮件'):
+        with st.spinner('邮件发送中...'):
+            success_count, failure_count = 0, 0
+            failed_emails = []
+
+            # 在循环外部建立 SMTP 连接
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(from_email, password)
+
+            for idx, row in df.iterrows():
+                if content_format == "文字形式":
+                    html_table = '<table>'
+                    for col in body_columns:
+                        html_table += f'<tr><td><b>{col}</b></td><td>{row[col]}</td></tr>'
+                    html_table += '</table>'
+                    column_content = html_table
+                else:
+                    # column_content = "\n\n ".join(f"{col}: {row[col]}" for col in body_columns)
+                    # 创建带线框的表格
+                    html_table = '<table style="border-collapse: collapse; width: 100%;">'
+                    html_table += '<tr>'
+                    for col in body_columns:
+                        html_table += f'<th style="border: 1px solid black; padding: 8px;">{col}</th>'
+                    html_table += '</tr>'
+
+                    html_table += '<tr>'
+                    for col in body_columns:
+                        html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
+                    html_table += '</tr>'
+                    html_table += '</table>'
+                    column_content = html_table
 
 
-        # 邮件预览
-        if st.button('预览邮件'):
-            if not df.empty and body_columns:
-                sample_row = df.iloc[0]
-                preview_content = generate_email_html(user_body_html, sample_row, body_columns)
-                st.markdown("### 邮件预览")
-                st.markdown(preview_content, unsafe_allow_html=True)
-            else:
-                st.error("请先上传文件并选择包含在邮件内容中的列")
+                combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
+                success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
+                if success:
+                    success_count += 1
+                else:
+                    failure_count += 1
+                    failed_emails.append(row['Email Address'])
 
-        # 发送邮件并统计成功和失败的数量
-        if st.button('发送邮件'):
-            server = create_smtp_server(from_email, password)
-            if server and not df.empty:
-                success_count, failure_count = 0, 0
-                for idx, row in df.iterrows():
-                    combined_body = generate_email_html(user_body_html, row, body_columns)
-                    success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
-                    if success:
-                        success_count += 1
-                    else:
-                        failure_count += 1
-                        st.error(f"邮件发送至 {row['Email Address']} 失败: {error_message}")
+            # 断开 SMTP 连接
+            server.quit()
 
-                # 显示发送结果统计
-                st.success(f"邮件发送成功数量: {success_count}")
-                st.error(f"邮件发送失败数量: {failure_count}")
-                server.quit()
-            elif df.empty:
-                st.error("请先上传文件")
+            # 显示发送结果统计
+            st.success(f"邮件发送成功数量: {success_count}")
+            st.error(f"邮件发送失败数量: {failure_count}")
 
-if __name__ == "__main__":
-    main()
+            # 显示失败邮件地址
+            if failed_emails:
+                st.error("以下邮件发送失败:")
+                for email in failed_emails:
+                    st.write(email)
