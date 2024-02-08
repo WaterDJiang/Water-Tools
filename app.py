@@ -61,16 +61,14 @@ def convert_df_to_str(df):
     return df
 
 # 生成邮件HTML内容的辅助函数
-def generate_email_html(user_body_head,user_body_html, row, columns, content_format,user_body_end):
+def generate_email_html(user_body_head, user_body_html, row, columns, content_format, user_body_end):
     """根据选择的格式生成邮件HTML内容"""
     if content_format == "文字形式":
-        html_table = '<table>'
-        for col in columns:
-            html_table += f'<tr><td><b>{col}</b></td><td>{row[col]}</td></tr>'
-        html_table += '</table>'
-        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{html_table}<br><br>{user_body_end}"
-        return formatted_body
+        # 插入每列的内容作为文本
+        html_text = '<p>' + '<br>'.join(f"{col}: {row[col]}" for col in columns) + '</p>'
+        formatted_body = f"{user_body_head}<br><br>{user_body_html}{html_text}<br><br>{user_body_end}"
     elif content_format == "表格形式":
+        # 插入每列的内容作为表格
         html_table = '<table style="border-collapse: collapse; width: 100%;">'
         html_table += '<tr>'
         for col in columns:
@@ -79,13 +77,12 @@ def generate_email_html(user_body_head,user_body_html, row, columns, content_for
         for col in columns:
             html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
         html_table += '</tr></table>'
-        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{html_table}<br><br>{user_body_end}"
-        return formatted_body
+        formatted_body = f"{user_body_head}<br><br>{user_body_html}{html_table}<br><br>{user_body_end}"
     else: # 使用占位符方式
-        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{user_body_end}"
-        for col in columns:
-            formatted_body = formatted_body.replace(f"{{{col}}}", str(row[col]))
-        return formatted_body
+        formatted_body = user_body_html.format(**{col: row[col] for col in columns})
+        formatted_body = f"{user_body_head}<br><br>{formatted_body}<br><br>{user_body_end}"
+
+    return formatted_body
 
 # 发送邮件的函数
 def send_email(server, from_email, to_email, subject, body):
@@ -112,11 +109,11 @@ if uploaded_file is not None:
     st.write(df)
 
     subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
-    user_body_head = st.text_input("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head")
-    user_body_html = st.text_area("输入邮件正文（HTML格式）", "在这里输入邮件的HTML内容...", key="body_html",height=280)
+    user_body_head = st.text_area("输入邮件抬头（HTML格式）", "在这里输入邮件的抬头HTML内容...", key="head_html", height=30)
+    user_body_html = st.text_area("输入邮件正文（HTML格式）", "在这里输入邮件的正文HTML内容...", key="body_html", height=280)
     body_columns = st.multiselect("选择包含在邮件内容中的列", df.columns, key="columns")
     content_format = st.radio("选择个性化内容的显示格式", ("文字形式", "表格形式", "占位符方式"))
-    user_body_end = st.text_area("输入邮件结尾（HTML格式）", "在这里输入邮件的结尾内容...", key="end_html")
+    user_body_end = st.text_area("输入邮件结尾（HTML格式）", "在这里输入邮件的结尾HTML内容...", key="end_html", height=150)
 
     # 预览邮件
     if st.button('预览邮件'):
@@ -161,4 +158,5 @@ if uploaded_file is not None:
                 st.error("以下邮件发送失败:")
                 for email in failed_emails:
                     st.write(email)
+
 
