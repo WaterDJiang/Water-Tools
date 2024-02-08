@@ -6,6 +6,14 @@ from email.mime.text import MIMEText
 
 
 
+st.set_page_config(
+    page_title="Wattter.Tool",
+    page_icon="🚗",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+
 # 创建侧边栏
 with st.sidebar:
     # 创建标题和图像的布局
@@ -46,6 +54,39 @@ with st.sidebar:
         '''
     )
 
+def convert_df_to_str(df):
+    for col in df.columns:
+        if df[col].dtype != object:
+            df[col] = df[col].astype(str)
+    return df
+
+# 生成邮件HTML内容的辅助函数
+def generate_email_html(user_body_head,user_body_html, row, columns, content_format,user_body_end):
+    """根据选择的格式生成邮件HTML内容"""
+    if content_format == "文字形式":
+        html_table = '<table>'
+        for col in columns:
+            html_table += f'<tr><td><b>{col}</b></td><td>{row[col]}</td></tr>'
+        html_table += '</table>'
+        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{html_table}<br><br>{user_body_end}"
+        return formatted_body
+    elif content_format == "表格形式":
+        html_table = '<table style="border-collapse: collapse; width: 100%;">'
+        html_table += '<tr>'
+        for col in columns:
+            html_table += f'<th style="border: 1px solid black; padding: 8px;">{col}</th>'
+        html_table += '</tr><tr>'
+        for col in columns:
+            html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
+        html_table += '</tr></table>'
+        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{html_table}<br><br>{user_body_end}"
+        return formatted_body
+    else: # 使用占位符方式
+        formatted_body = f"{user_body_head}<br><br>{user_body_html}<br><br>{user_body_end}"
+        for col in columns:
+            formatted_body = formatted_body.replace(f"{{{col}}}", str(row[col]))
+        return formatted_body
+
 # 发送邮件的函数
 def send_email(server, from_email, to_email, subject, body):
     try:
@@ -60,34 +101,6 @@ def send_email(server, from_email, to_email, subject, body):
     except Exception as e:
         return False, str(e)
 
-# 转换 DataFrame 中的非字符串列为字符串类型
-def convert_df_to_str(df):
-    for col in df.columns:
-        if df[col].dtype != object:
-            df[col] = df[col].astype(str)
-    return df
-
-# 生成邮件内容的辅助函数
-def generate_email_content(head, body, row, columns, end, format):
-    column_content = ""
-    if columns:  # 检查是否有选定的列
-        if format == "文字形式":
-            column_content = "\n\n".join(f"{col}: {row[col]}" for col in columns)
-        else:
-            html_table = '<table style="border-collapse: collapse; width: 100%;">'
-            html_table += '<tr>'
-            for col in columns:
-                html_table += f'<th style="border: 1px solid black; padding: 8px;">{col}</th>'
-            html_table += '</tr>'
-            html_table += '<tr>'
-            for col in columns:
-                html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
-            html_table += '</tr>'
-            html_table += '</table>'
-            column_content = html_table
-
-    return f"{head}<br><br>{body}<br><br>{column_content}<br><br>{end}"
-
 # Streamlit 网页界面部分
 st.title('Gmail邮件群发工具')
 
@@ -100,10 +113,10 @@ if uploaded_file is not None:
 
     subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
     user_body_head = st.text_input("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head")
-    user_body_body = st.text_area("输入邮件正文", "在这里输入邮件的主要内容...", key="body_body")
+    user_body_html = st.text_area("输入邮件正文（HTML格式）", "在这里输入邮件的HTML内容...", key="body_html",height=280)
     body_columns = st.multiselect("选择包含在邮件内容中的列", df.columns, key="columns")
-    content_format = st.radio("选择个性化内容的显示格式", ("文字形式", "表格形式"))
-    user_body_end = st.text_area("输入邮件结尾", "在这里输入邮件的结束部分...", key="body_end")
+    content_format = st.radio("选择个性化内容的显示格式", ("文字形式", "表格形式", "占位符方式"))
+    user_body_end = st.text_area("输入邮件结尾（HTML格式）", "在这里输入邮件的结尾内容...", key="end_html")
 
     # 预览邮件
     if st.button('预览邮件'):
@@ -111,9 +124,7 @@ if uploaded_file is not None:
             st.error("请先上传文件")
         else:
             sample_row = df.iloc[0]
-            preview_content = generate_email_content(
-                user_body_head, user_body_body, sample_row, body_columns, user_body_end, content_format
-            )
+            preview_content = generate_email_html(user_body_head,user_body_html, sample_row, body_columns, content_format,user_body_end)
             st.markdown("### 邮件预览")
             st.markdown(preview_content, unsafe_allow_html=True)
 
@@ -129,31 +140,9 @@ if uploaded_file is not None:
             server.login(from_email, password)
 
             for idx, row in df.iterrows():
-                if content_format == "文字形式":
-                    html_table = '<table>'
-                    for col in body_columns:
-                        html_table += f'<tr><td><b>{col}</b></td><td>{row[col]}</td></tr>'
-                    html_table += '</table>'
-                    column_content = html_table
-                else:
-                    # column_content = "\n\n ".join(f"{col}: {row[col]}" for col in body_columns)
-                    # 创建带线框的表格
-                    html_table = '<table style="border-collapse: collapse; width: 100%;">'
-                    html_table += '<tr>'
-                    for col in body_columns:
-                        html_table += f'<th style="border: 1px solid black; padding: 8px;">{col}</th>'
-                    html_table += '</tr>'
-
-                    html_table += '<tr>'
-                    for col in body_columns:
-                        html_table += f'<td style="border: 1px solid black; padding: 8px;">{row[col]}</td>'
-                    html_table += '</tr>'
-                    html_table += '</table>'
-                    column_content = html_table
-
-
-                combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
+                combined_body = generate_email_html(user_body_head,user_body_html, row, body_columns, content_format,user_body_end)
                 success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
+                
                 if success:
                     success_count += 1
                 else:
@@ -172,3 +161,4 @@ if uploaded_file is not None:
                 st.error("以下邮件发送失败:")
                 for email in failed_emails:
                     st.write(email)
+
