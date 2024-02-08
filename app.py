@@ -121,8 +121,8 @@ with streamlit_analytics.track():
                         column_content = html_table
     
     
-                    combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
-                    success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
+                        combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
+                        success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
                         if success:
                         success_count += 1
                     else:
