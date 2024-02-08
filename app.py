@@ -73,6 +73,7 @@ with streamlit_analytics.track():
     
     st.title('Gmail邮件群发工具')
     
+    # 文件上传部分
     uploaded_file = st.file_uploader("选择文件", type=["csv", "xlsx"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
@@ -121,21 +122,23 @@ with streamlit_analytics.track():
                         column_content = html_table
     
     
-                        combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
-                        success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
-                        if success:
+                    combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
+                    success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
+                    if success:
                         success_count += 1
                     else:
                         failure_count += 1
                         failed_emails.append(row['Email Address'])
     
+                # 断开 SMTP 连接
                 server.quit()
     
+                # 显示发送结果统计
                 st.success(f"邮件发送成功数量: {success_count}")
                 st.error(f"邮件发送失败数量: {failure_count}")
     
+                # 显示失败邮件地址
                 if failed_emails:
                     st.error("以下邮件发送失败:")
                     for email in failed_emails:
                         st.write(email)
-
