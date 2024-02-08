@@ -80,7 +80,7 @@ with streamlit_analytics.track():
         st.write(df)
     
         subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
-        user_body_head = st.text_input("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head", format="markdown")
+        user_body_head = st.text_area("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head", format="markdown")
         user_body_body = st.text_area("输入邮件正文", "在这里输入邮件的主要内容...", key="body_body", format="markdown")
         body_columns = st.multiselect("选择包含在邮件内容中的列", df.columns, key="columns")
         content_format = st.radio("选择个性化内容的显示格式", ("文字形式","表格形式"))
