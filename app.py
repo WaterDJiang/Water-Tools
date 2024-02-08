@@ -73,32 +73,40 @@ with streamlit_analytics.track():
     
     st.title('Gmail邮件群发工具')
     
-    uploaded_file = st.file_uploader("选择群发文件", type=["csv", "xlsx"])
+    uploaded_file = st.file_uploader("选择文件", type=["csv", "xlsx"])
     if uploaded_file is not None:
         df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
         df = convert_df_to_str(df)
         st.write(df)
     
         subject = st.text_input("邮件主题", "输入您的邮件主题...", key="subject")
-        user_body_head = st.text_area("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head", format="markdown")
-        user_body_body = st.text_area("输入邮件正文", "在这里输入邮件的主要内容...", key="body_body", format="markdown")
+        user_body_head = st.text_input("输入邮件抬头", "在这里输入邮件的抬头...", key="body_head")
+        user_body_body = st.text_area("输入邮件正文", "在这里输入邮件的主要内容...", key="body_body")
         body_columns = st.multiselect("选择包含在邮件内容中的列", df.columns, key="columns")
         content_format = st.radio("选择个性化内容的显示格式", ("文字形式","表格形式"))
-        user_body_end = st.text_area("输入邮件结尾", "在这里输入邮件的结束部分...", key="body_end", format="markdown")
+        user_body_end = st.text_area("输入邮件结尾", "在这里输入邮件的结束部分...", key="body_end")
     
+        # 发送邮件并统计成功和失败的数量
         if st.button('发送邮件'):
             with st.spinner('邮件发送中...'):
                 success_count, failure_count = 0, 0
                 failed_emails = []
     
+                # 在循环外部建立 SMTP 连接
                 server = smtplib.SMTP('smtp.gmail.com', 587)
                 server.starttls()
                 server.login(from_email, password)
     
                 for idx, row in df.iterrows():
-                    # 处理表格格式
-                    if content_format == "表格形式":
-                        # 创建表格
+                    if content_format == "文字形式":
+                        html_table = '<table>'
+                        for col in body_columns:
+                            html_table += f'<tr><td><b>{col}</b></td><td>{row[col]}</td></tr>'
+                        html_table += '</table>'
+                        column_content = html_table
+                    else:
+                        # column_content = "\n\n ".join(f"{col}: {row[col]}" for col in body_columns)
+                        # 创建带线框的表格
                         html_table = '<table style="border-collapse: collapse; width: 100%;">'
                         html_table += '<tr>'
                         for col in body_columns:
@@ -111,15 +119,11 @@ with streamlit_analytics.track():
                         html_table += '</tr>'
                         html_table += '</table>'
                         column_content = html_table
-                    else:
-                        # 文字形式处理
-                        column_content = '\n'.join([f'**{col}**: {row[col]}' for col in body_columns])
     
-                    # 使用markdown2将markdown文本转换为HTML
-                    combined_body = markdown2.markdown(f"{user_body_head}\n\n{user_body_body}\n\n{column_content}\n\n{user_body_end}")
     
+                    combined_body = f"{user_body_head}<br><br>{user_body_body}<br><br>{column_content}<br><br>{user_body_end}"
                     success, error_message = send_email(server, from_email, row['Email Address'], subject, combined_body)
-                    if success:
+                        if success:
                         success_count += 1
                     else:
                         failure_count += 1
