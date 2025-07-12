@@ -61,3 +61,4 @@ poetry.lock
 *.7z
 
 @/参考/
+.cursorrules
