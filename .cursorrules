@@ -1,0 +1,60 @@
+## Streamlit 前端最佳实践
+
+1. 结构清晰
+   - 将页面逻辑、组件、工具函数分离，推荐使用多文件结构（如pages/、components/、utils/等）。
+2. 组件复用
+   - 尽量将可复用的UI或功能封装为函数或类，便于维护和扩展。
+3. 状态管理
+   - 合理使用st.session_state进行全局状态管理，避免全局变量。
+4. 注释与文档
+   - 关键逻辑、交互流程、数据流动需有详细注释，重要函数需有docstring。
+5. 依赖管理
+   - 统一在requirements.txt中管理依赖，避免冗余和版本冲突。
+6. 性能优化
+   - 合理使用st.cache_data、st.cache_resource等缓存装饰器，减少重复计算。
+7. 交互体验
+   - 保持界面响应流畅，避免阻塞式操作，必要时使用st.spinner等提示。
+8. 安全性
+   - 不在前端暴露敏感信息，表单输入需校验。
+9. 代码风格
+   - 使用中文注释。 
+   - 使用 streamlit 的组件和函数。
+   - 使用 streamlit 的样式和布局。
+   - 使用 streamlit 的交互和动画。
+   - 使用 streamlit 的缓存和优化。
+   - 使用 streamlit 的国际化和多语言支持。
+   - 使用 streamlit 的测试和调试。
+   - 使用 streamlit 的部署和发布。
+   - 使用 streamlit 的扩展和插件。
+   - 使用 streamlit 的社区和生态。
+
+## 主入口与子项目聚合最佳实践
+
+1. 主入口（如 app.py）应维护一个子项目路径列表（如 SUBPROJECT_PATHS），并通过 importlib 动态加载每个子项目的 PROJECT_META 信息，自动聚合为 SUBPROJECTS。
+2. 每个子项目应在主文件顶部定义 PROJECT_META 字典，包含如下字段：
+   - name：工具名称（如“Gmail 群发邮件工具”）
+   - key：唯一标识（如“sendemail”）
+   - desc：简要描述
+   - entry：入口文件路径（如“sendemail/sendemail_app.py”）
+3. 推荐所有子项目主文件命名为“[子项目名]_app.py”，如 sendemail_app.py，便于统一管理和自动聚合。
+4. 主入口侧边栏通过 PROJECT_META 自动生成工具列表，用户可一键切换。
+5. 子项目如需扩展元信息，可在 PROJECT_META 中自定义更多字段。
+
+示例：
+
+# 主入口 app.py
+SUBPROJECT_PATHS = [
+    "sendemail/sendemail_app.py",
+    # 其他子项目路径
+]
+def load_project_meta(entry_path):
+    ... # 动态加载并返回 PROJECT_META
+SUBPROJECTS = [load_project_meta(p) for p in SUBPROJECT_PATHS if load_project_meta(p)]
+
+# 子项目 sendemail/sendemail_app.py
+PROJECT_META = {
+    "name": "Gmail 群发邮件工具",
+    "key": "sendemail",
+    "desc": "Gmail 群发邮件工具，支持批量导入、个性化内容、发送统计等。",
+    "entry": "sendemail/sendemail_app.py"
+}
