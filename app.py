@@ -26,7 +26,10 @@ st.set_page_config(
 
 # 子项目路径列表
 SUBPROJECT_PATHS = [
+    "tools/spider/spider_app.py",  # 新增爬虫工具路径
+    "tools/convertor/convertor_app.py",
     "tools/sendemail/sendemail_app.py",
+
     # 未来可在此添加更多子项目路径
 ]
 

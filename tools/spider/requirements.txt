@@ -3,5 +3,5 @@ requests
 beautifulsoup4
 playwright
 pandas
-pdfplumber
-python-docx 
+
+lxml 可选。 
