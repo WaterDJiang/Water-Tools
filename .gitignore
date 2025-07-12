@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 环境/依赖
+.env
+.venv/
+venv/
+ENV/
+env/
+Pipfile.lock
+poetry.lock
+
+# VSCode/IDE
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# MacOS
+.DS_Store
+
+# Streamlit
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# 数据/输出/临时
+*.db
+*.sqlite3
+*.h5
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.bak
+*.tmp
+*.swp
+
+# 图片/大文件（如不想上传图片可加上 sendemail/images/）
+# sendemail/images/
+
+# Git LFS
+*.lfs
+
+# 其他
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+@/参考/
