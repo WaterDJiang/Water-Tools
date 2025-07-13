@@ -1,0 +1,58 @@
+# Python 缓存
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+*.log
+
+# 虚拟环境
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# IDE 配置
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# MacOS
+.DS_Store
+
+# Streamlit 配置
+.streamlit/config.toml
+.streamlit/secrets.toml
+
+# 数据/输出/临时
+*.db
+*.sqlite3
+*.h5
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.bak
+*.tmp
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# 其他
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# 参考文档
+参考/
+.cursorrules 
